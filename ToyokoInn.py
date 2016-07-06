@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-__date__= ' 7 05, 2016 '
-__author__= 'mkfsn'
+__date__ = ' 7 05, 2016 '
+__author__ = 'mkfsn'
 
 
 from re import sub
@@ -22,7 +22,26 @@ def fetch(year, month, day, member=False):
 
     s = requests.session()
 
-    url = "https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html?htlDtl=true&cntry=JPN&chcknYearAndMnth={year}{month}&chcknDayOfMnth={day}&ldgngNum=1&roomNum=1&roomClssId=&fvrtName=&prfctr=35&htlName=%E5%BE%B3%E5%B1%B1%E9%A7%85%E6%96%B0%E5%B9%B9%E7%B7%9A%E5%8F%A3&language=ja&dispFull=on&ldgngPpl=1&id=131&ref=info&_ga=1.151929791.720274849.1467717947".format(year=year, month=month, day=day)
+    baseurl = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html'
+    param = {
+        'tlDtl': 'true',
+        'cntry': 'JPN',
+        'chcknYearAndMnth': '{year}{month}'.format(year=year, month=month),
+        'chcknDayOfMnth': '{day}'.format(day=day),
+        'ldgngNum': '1',
+        'roomNum': '1',
+        'roomClssId': '',
+        'fvrtName': '',
+        'prfctr': '35',
+        'htlName': '%E5%BE%B3%E5%B1%B1%E9%A7%85%E6%96%B0%E5%B9%B9%E7%B7%9A%E5%8F%A3',
+        'language': 'ja',
+        'dispFull': 'on',
+        'ldgngPpl': '1',
+        'id': '131',
+        'ref': 'info',
+        '_ga': '1.151929791.720274849.1467717947',
+    }
+    url = baseurl + '?' + '&'.join([k + '=' + v for k, v in param.items()])
 
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
@@ -62,20 +81,24 @@ def fetch(year, month, day, member=False):
     # session POST
     r = s.post(url, headers=headers, data=data, allow_redirects=False)
 
-    url = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html?clndr[6000136][][6000136][][20071001]'
+    baseurl = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html'
+    param = 'clndr[6000136][][6000136][][20071001]'
+    url = baseurl + '?' + param
     r = s.post(url, headers=headers, data=data)
 
     html = r.text.encode('utf-8')
     pq = PyQuery(html).find("form div.BlockFormClndr table.BlockSrchClndr3")
 
-    date_order = [PyQuery(th).text() for th in PyQuery(pq).find("tr:eq(11) th")]
-    results = {PyQuery(th).text(): {} for th in PyQuery(pq).find("tr:eq(11) th")}
+    date_order = [PyQuery(v).text() for v in PyQuery(pq).find("tr:eq(11) th")]
+    results = {d: {} for d in date_order}
 
     index = 9
     while index < 100:
+        # Get type of room
         room = PyQuery(pq).children("tbody > tr:eq(%d) th:eq(0)" % index).text()
         if room == '':
             break
+
         for date, v in results.items():
             results[date][room] = {'member': [], 'guest': []}
 
@@ -99,7 +122,7 @@ def fetch(year, month, day, member=False):
             results[date_order[i_]][room]['guest'] = [price, remain]
             i_ += 1
         index += 3
-    
+
     # List all
     # for date, _item in results.items():
     #     for room, item in results[date].items():
@@ -118,12 +141,20 @@ def fetch(year, month, day, member=False):
 
 
 if __name__ == '__main__':
-    import argparse, json, os, sys
+    import argparse
+    import os
+    import sys
+    import json
 
-    parser = argparse.ArgumentParser(description='Fetch ToyokoINN reservable room')
-    parser.add_argument('--year', type=int, required=True, help='Specify year of date')
-    parser.add_argument('--month', type=int, choices=xrange(1, 13), required=True, help='Specify month of date')
-    parser.add_argument('--day', type=int, choices=xrange(1, 32), required=True, help='Specify day of date')
+    parser = argparse.ArgumentParser(
+        description='Fetch ToyokoInn reservable room'
+    )
+    parser.add_argument('--year', type=int,
+                        required=True, help='Specify year of date')
+    parser.add_argument('--month', type=int, choices=xrange(1, 13),
+                        required=True, help='Specify month of date')
+    parser.add_argument('--day', type=int, choices=xrange(1, 32),
+                        required=True, help='Specify day of date')
 
     args = parser.parse_args()
     if datetime.now() > datetime(args.year, args.month, args.day, 23, 59, 59):
