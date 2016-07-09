@@ -85,7 +85,9 @@ class ToyokoInn(object):
             'cntry': 'JPN',
             'chcknYearAndMnth': '%d%02d' % (date['year'], date['month']),
             'chcknDayOfMnth': '%02d' % (date['day']),
+            # 宿泊数
             'ldgngNum': '1',
+            # 部屋数
             'roomNum': '1',
             'roomClssId': '',
             'fvrtName': '',
@@ -93,6 +95,7 @@ class ToyokoInn(object):
             'htlName': quote(self.name.encode("UTF-8")),
             'language': 'ja',
             'dispFull': 'on',
+            # １部屋ご利用人数
             'ldgngPpl': '1',
             'id': self.dataid,
             'ref': 'info',
