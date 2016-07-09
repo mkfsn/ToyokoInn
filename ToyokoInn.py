@@ -36,7 +36,12 @@ class ToyokoInn(object):
             price = int(sub(r'[^\d.]', '', price))
 
             remain = PyQuery(item).find("td + td + td").text()
-            remain = 0 if remain == u'\xd7' or remain == '' else int(remain)
+            if remain == u'\u25ce':
+                remain = 10
+            elif remain == u'\xd7' or remain == '':
+                remain = 0
+            else:
+                remain = int(remain)
 
             result.append([price, remain])
         return result
