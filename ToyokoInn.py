@@ -115,6 +115,9 @@ class ToyokoInn(object):
         # session GET
         r = s.get(url, headers=headers)
 
+        _s = "table.BlockSearch1 > tbody > div > tr > th > .BlockSearch2 a"
+        clndr = PyQuery(r.text).find(_s).attr("onclick")[24:-2]
+
         url = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html'
         data = {
             'rg.seasar.ymir.token': '89dbd02e37b4597e8862423dc09a4c0d',
@@ -140,11 +143,8 @@ class ToyokoInn(object):
             'dispFull': 'on',
         }
 
-        # session POST
-        r = s.post(url, headers=headers, data=data, allow_redirects=False)
-
         baseurl = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html'
-        param = 'clndr[6000136][][6000136][][20071001]'
+        param = clndr
         url = baseurl + '?' + param
         r = s.post(url, headers=headers, data=data)
 
