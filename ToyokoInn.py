@@ -96,7 +96,7 @@ class ToyokoInn(object):
             'language': 'ja',
             'dispFull': 'on',
             # １部屋ご利用人数
-            'ldgngPpl': '1',
+            'ldgngPpl': '2',
             'id': self.dataid,
             'ref': 'info',
         }
