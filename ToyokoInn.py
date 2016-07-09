@@ -24,7 +24,6 @@ class ToyokoInn(object):
             self.dataid = data[0]['dataid']
             self.state = data[0]['state']
             self.substateid = data[0]['substateid']
-        print data
 
     def _extract_price_remain(self, html, index):
         selector_s = "tbody > tr:eq(%d) > td:gt(0)" % index
@@ -187,16 +186,15 @@ if __name__ == '__main__':
 
     filename = '/tmp/%s' % title
     if not os.path.isfile(filename):
-        with open(filename, 'w') as f:
-            changed = True
-            f.write(json.dumps(result))
+        changed = True
     else:
         with open(filename, 'r+') as f:
             previous = f.read()
             if previous != json.dumps(result):
                 changed = True
-            f.seek(0)
-            f.write(json.dumps(result))
+
+    with open(filename, 'w') as f:
+        f.write(json.dumps(result))
 
     if not changed:
         sys.exit(0)
