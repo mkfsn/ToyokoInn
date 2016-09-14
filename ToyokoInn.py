@@ -7,7 +7,7 @@ __author__ = 'mkfsn'
 from re import sub
 import requests
 from pyquery import PyQuery
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib import quote
 
 
@@ -31,7 +31,7 @@ class ToyokoInn(object):
         result = []
         for td in PyQuery(html).children(selector_s):
             item = PyQuery(td).find("table > tbody div tr:eq(1)")
-            
+
             price = PyQuery(item).find("td > span").text()
             price = int(sub(r'[^\d.]', '', price))
 
@@ -104,10 +104,10 @@ class ToyokoInn(object):
 
         headers = {
             'User-Agent': ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) ' +
-                           'AppleWebKit/537.36 (KHTML, like Gecko) ' + 
+                           'AppleWebKit/537.36 (KHTML, like Gecko) ' +
                            'Chrome/51.0.2704.103 Safari/537.36'),
-            'Accept': ('text/html,application/xhtml+xml,application/xml;q=0.9' +
-                       ',image/webp,*/*;q=0.8'),
+            'Accept': ('text/html,application/xhtml+xml,application/xml;' +
+                       'q=0.9,image/webp,*/*;q=0.8'),
             'Accept-Encoding': 'gzip, deflate, sdch, br',
             'Accept-Language': 'zh-TW,zh;q=0.8,en-US;q=0.6,en;q=0.4,ja;q=0.2',
         }
@@ -150,7 +150,8 @@ class ToyokoInn(object):
 
         result = []
         data = self._extract(r.text.encode('utf-8'))
-        for room, item in data['%s/%s' % (int(date['month']), int(date['day']))].items():
+        key = '%s/%s' % (int(date['month']), int(date['day']))
+        for room, item in data[key].items():
             price, remain = item['member'] if member else item['guest']
             if remain == 0:
                 continue
@@ -159,8 +160,18 @@ class ToyokoInn(object):
 
 
 if __name__ == '__main__':
-    year, month, day, member = [2016, 7, 22, True]
-    hotel = ToyokoInn(u"徳山駅新幹線口")
+    next_month = datetime.today() + timedelta(days=30)
+    year, month, day, member = [
+        next_month.year,
+        next_month.month,
+        next_month.day,
+        True
+    ]
+
+    hotel = ToyokoInn(u"大阪JR野田駅前")
+
     date = {'year': int(year), 'month': int(month), 'day': int(day)}
     rooms = hotel.room(date=date, member=member)
-    print rooms
+
+    for r in rooms:
+        print r
