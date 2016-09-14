@@ -32,11 +32,11 @@ if datetime.now() > datetime(args.year, args.month, args.day, 23, 59, 59):
     sys.exit(-1)
 
 year, month, day = [args.year, '%02d' % args.month, '%02d' % args.day]
-hotel = ToyokoInn(u"徳山駅新幹線口")
+hotel = ToyokoInn(u"米原駅新幹線西口")
 date = {'year': int(year), 'month': int(month), 'day': int(day)}
 result = hotel.room(date=date, member=True)
 
-title = "徳山駅新幹線口-%s-%s-%s" % (year, month, day)
+title = "東横INN米原駅新幹線西口-%s-%s-%s" % (year, month, day)
 
 changed = False
 
@@ -64,5 +64,5 @@ data = {
     'text': content,
     'channel': 'toyokoinn',
 }
-slack_url = 'https://hooks.slack.com/services/XXXXXXXXXXXX'
+slack_url = 'https://hooks.slack.com/services/XXXXXX'
 requests.post(slack_url, data=json.dumps(data))
