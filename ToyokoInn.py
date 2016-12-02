@@ -12,6 +12,22 @@ from urllib import quote
 import difflib
 
 
+class Room(object):
+
+    def __init__(self, name, member_price, member_remain,
+                 guest_price, guest_remain):
+        self.name = name.encode('utf-8')
+        self.guest = {'remain': guest_remain, 'price': guest_price}
+        self.member = {'remain': member_remain, 'price': member_price}
+
+    def __repr__(self):
+        m = '<Member: price=%d, remain=%d>' % (self.member['price'],
+                                               self.member['remain'])
+        g = '<Guest: price=%d, remain=%d>' % (self.guest['price'],
+                                              self.guest['remain'])
+        return '<Room %r: %s, %s>' % (self.name, m, g)
+
+
 class ToyokoInn(object):
 
     __info = None
@@ -177,6 +193,14 @@ class ToyokoInn(object):
 
         return r.text.encode('utf-8')
 
+    def __adjust(self, rooms):
+        data = []
+        for name, room in rooms.items():
+            r = Room(name, room['member'][0], room['member'][1],
+                     room['guest'][0], room['guest'][1])
+            data.append(r)
+        return data
+
     def rooms(self, **kwargs):
 
         member = kwargs.get('member', False)
@@ -198,18 +222,7 @@ class ToyokoInn(object):
         text = self.__fetch_rawdata(year, month, day)
 
         data = self.__extract(text)
-        return data['%s/%s' % (month, day)]
-
-        # Extract data
-        result = []
-        key = '%s/%s' % (month, day)
-        for room, item in data[key].items():
-            price, remain = item['member'] if member else item['guest']
-            if remain == 0:
-                continue
-            result.append('%s %s %s' % (room, price, remain))
-
-        return result
+        return self.__adjust(data['%s/%s' % (month, day)])
 
 
 if __name__ == '__main__':
@@ -226,5 +239,5 @@ if __name__ == '__main__':
     date = {'year': int(year), 'month': int(month), 'day': int(day)}
     rooms = hotel.rooms(date=date, member=member)
 
-    for name, room in rooms.items():
-        print name, room
+    for r in rooms:
+        print r
