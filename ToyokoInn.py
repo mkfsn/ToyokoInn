@@ -102,7 +102,7 @@ class ToyokoInn(object):
         self.state = data['state']
         self.substateid = data['substateid']
 
-    def _extract_price_remain(self, html, index):
+    def __extract_price_remain(self, html, index):
         selector_s = "tbody > tr:eq(%d) > td:gt(0)" % index
 
         result = []
@@ -144,10 +144,10 @@ class ToyokoInn(object):
             for date, v in self.data.items():
                 self.data[date][room] = {'member': [], 'guest': []}
 
-            for i, v in enumerate(self._extract_price_remain(pq, index)):
+            for i, v in enumerate(self.__extract_price_remain(pq, index)):
                 self.data[date_order[i]][room]['member'] = v
 
-            for i, v in enumerate(self._extract_price_remain(pq, index + 2)):
+            for i, v in enumerate(self.__extract_price_remain(pq, index + 2)):
                 self.data[date_order[i]][room]['guest'] = v
 
             index += 3
