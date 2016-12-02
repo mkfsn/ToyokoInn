@@ -147,7 +147,7 @@ class ToyokoInn(object):
             month = int(kwargs['month'])
             day = int(kwargs['day'])
 
-        elif 'data' in kwargs:
+        elif 'date' in kwargs:
             date = kwargs['date']
 
         else:
