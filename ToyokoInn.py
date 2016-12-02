@@ -15,6 +15,7 @@ import difflib
 class ToyokoInn(object):
 
     __info = None
+    __default = None
 
     def __search_hotel_by_name(self, name):
         n = sum(1 for h in ToyokoInn.__info if name in h['name'])
@@ -46,11 +47,30 @@ class ToyokoInn(object):
                 return hotel
         raise Exception("Hotel not found")
 
+    def __load_config(self, fname):
+        from ConfigParser import RawConfigParser
+        config = RawConfigParser()
+        config.optionxform = str
+
+        with open(fname, 'rb') as fp:
+            config.readfp(fp, fname)
+
+        data = {}
+        for section in config.sections():
+            data[section] = map(lambda x: {x[0]: x[1]}, config.items(section))
+
+        return data
+
     def __init__(self, name=None, id=None):
 
         if not ToyokoInn.__info:
             from script.fetch_hotel_info import fetch
             ToyokoInn.__info = fetch()
+
+        if not ToyokoInn.__default:
+            ToyokoInn.__default = self.__load_config("settings.ini")
+
+        self.config = ToyokoInn.__default
 
         if isinstance(name, unicode):
             name = name.encode('utf-8')
