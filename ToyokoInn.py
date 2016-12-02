@@ -37,7 +37,7 @@ class ToyokoInn(object):
                 print "%f%%: %s, id = %s" %(i[1], i[0]['name'], i[0]['dataid'])
             print
             print "Choose:"
-            print "%s, id = %s" %(i[0]['name'], i[0]['dataid'])
+            print "%s, id = %s" %(data[0][0]['name'], data[0][0]['dataid'])
 
         return data[0][0]
 
