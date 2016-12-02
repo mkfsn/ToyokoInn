@@ -108,7 +108,7 @@ class ToyokoInn(object):
             result.append([price, remain])
         return result
 
-    def _extract(self, html):
+    def __extract(self, html):
         pq = PyQuery(html).find(
             "form div.BlockFormClndr table.BlockSrchClndr3"
         )
@@ -138,32 +138,15 @@ class ToyokoInn(object):
 
         return self.data
 
-    def room(self, **kwargs):
-
-        member = kwargs.get('member', False)
-
-        if 'year' in kwargs and 'month' in kwargs and 'day' in kwargs:
-            year = int(kwargs['year'])
-            month = int(kwargs['month'])
-            day = int(kwargs['day'])
-
-        elif 'date' in kwargs:
-            date = kwargs['date']
-
-        else:
-            raise Exception("Please specify a day")
-
-        return self._room(date, member)
-
-    def _room(self, date=None, member=False):
+    def __fetch_rawdata(self, year, month, day):
         # Start a session
         s = requests.session()
 
         # Prepare request: GET
         baseurl = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html'
         self.config['param'].update({
-            'chcknYearAndMnth': '%d%02d' % (date['year'], date['month']),
-            'chcknDayOfMnth': '%02d' % (date['day']),
+            'chcknYearAndMnth': '%d%02d' % (year, month),
+            'chcknDayOfMnth': '%02d' % day,
             'prfctr': self.state,
             'htlName': quote(self.name),
             'id': self.dataid,
@@ -182,8 +165,8 @@ class ToyokoInn(object):
         self.config['payload'].update({
             'prfctr': self.state,
             'htlName': self.name,
-            'chcknYearAndMnth': '%d%02d' % (date['year'], date['month']),
-            'chcknDayOfMnth': '%02d' % date['day'],
+            'chcknYearAndMnth': '%d%02d' % (year, month),
+            'chcknDayOfMnth': '%02d' % day,
         })
         param = clndr
         url = baseurl + '?' + param
@@ -192,10 +175,34 @@ class ToyokoInn(object):
         r = s.post(url, headers=self.config['headers'],
                    data=self.config['payload'])
 
+        return r.text.encode('utf-8')
+
+    def rooms(self, **kwargs):
+
+        member = kwargs.get('member', False)
+
+        if 'year' in kwargs and 'month' in kwargs and 'day' in kwargs:
+            year = int(kwargs['year'])
+            month = int(kwargs['month'])
+            day = int(kwargs['day'])
+
+        elif 'date' in kwargs:
+            date = kwargs['date']
+            year = int(date['year'])
+            month = int(date['month'])
+            day = int(date['day'])
+
+        else:
+            raise Exception("Please specify a day")
+
+        text = self.__fetch_rawdata(year, month, day)
+
+        data = self.__extract(text)
+        return data['%s/%s' % (month, day)]
+
         # Extract data
         result = []
-        data = self._extract(r.text.encode('utf-8'))
-        key = '%s/%s' % (int(date['month']), int(date['day']))
+        key = '%s/%s' % (month, day)
         for room, item in data[key].items():
             price, remain = item['member'] if member else item['guest']
             if remain == 0:
@@ -217,7 +224,7 @@ if __name__ == '__main__':
     hotel = ToyokoInn(u"札幌すすきの交差点")
 
     date = {'year': int(year), 'month': int(month), 'day': int(day)}
-    rooms = hotel.room(date=date, member=member)
+    rooms = hotel.rooms(date=date, member=member)
 
-    for r in rooms:
-        print r
+    for name, room in rooms.items():
+        print name, room
