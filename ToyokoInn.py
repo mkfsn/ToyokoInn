@@ -25,7 +25,7 @@ class Room(object):
                                                self.member['remain'])
         g = '<Guest: price=%d, remain=%d>' % (self.guest['price'],
                                               self.guest['remain'])
-        return '<Room %r: %s, %s>' % (self.name, m, g)
+        return '<Room %s: %s, %s>' % (self.name, m, g)
 
 
 class ToyokoInn(object):
