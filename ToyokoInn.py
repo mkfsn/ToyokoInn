@@ -138,7 +138,21 @@ class ToyokoInn(object):
 
         return self.data
 
-    def room(self, date=None, member=False):
+    def room(self, **kwargs):
+
+        member = kwargs.get('member', False)
+
+        if 'year' in kwargs and 'month' in kwargs and 'day' in kwargs:
+            year = int(kwargs['year'])
+            month = int(kwargs['month'])
+            day = int(kwargs['day'])
+
+        elif 'data' in kwargs:
+            date = kwargs['date']
+
+        else:
+            raise Exception("Please specify a day")
+
         return self._room(date, member)
 
     def _room(self, date=None, member=False):
