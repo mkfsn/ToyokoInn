@@ -56,8 +56,8 @@ class ToyokoInn(object):
             config.readfp(fp, fname)
 
         data = {}
-        for section in config.sections():
-            data[section] = map(lambda x: {x[0]: x[1]}, config.items(section))
+        for s in config.sections():
+            data[s] = dict(config.items(s))
 
         return data
 
