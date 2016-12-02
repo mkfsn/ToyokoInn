@@ -9,21 +9,62 @@ import requests
 from pyquery import PyQuery
 from datetime import datetime, timedelta
 from urllib import quote
+import difflib
 
 
 class ToyokoInn(object):
 
-    def __init__(self, name):
-        import json
-        self.name = name
+    __info = None
 
-        with open("hotel.json") as f:
-            data = filter(lambda x: x['name'].endswith(name), json.load(f))[:1]
+    def __search_hotel_by_name(self, name):
+        n = sum(1 for h in ToyokoInn.__info if name in h['name'])
 
-        if data:
-            self.dataid = data[0]['dataid']
-            self.state = data[0]['state']
-            self.substateid = data[0]['substateid']
+        weighted_results = []
+        for hotel in ToyokoInn.__info:
+            ratio = difflib.SequenceMatcher(None, hotel['name'], name).ratio()
+            weighted_results.append((hotel, ratio))
+        weighted_results = sorted(weighted_results, key=lambda x: x[1])
+
+        data = weighted_results[::-1][:n]
+
+        if n == 0:
+            raise Exception("No candidate hotel is found")
+
+        elif n != 1:
+            print "Candidates are:"
+            for i in data:
+                print "%f%%: %s, id = %s" %(i[1], i[0]['name'], i[0]['dataid'])
+            print
+            print "Choose:"
+            print "%s, id = %s" %(i[0]['name'], i[0]['dataid'])
+
+        return data[0][0]
+
+    def __search_hotel_by_id(self, id):
+        for hotel in ToyokoInn.__info:
+            if id == hotel['dataid']:
+                return hotel
+        raise Exception("Hotel not found")
+
+    def __init__(self, name=None, id=None):
+
+        if not ToyokoInn.__info:
+            from script.fetch_hotel_info import fetch
+            ToyokoInn.__info = fetch()
+
+        if isinstance(name, unicode):
+            name = name.encode('utf-8')
+
+        if id is not None:
+            data = self.__search_hotel_by_id(str(id))
+
+        elif name is not None:
+            data = self.__search_hotel_by_name(name)
+
+        self.name = data['name']
+        self.dataid = data['dataid']
+        self.state = data['state']
+        self.substateid = data['substateid']
 
     def _extract_price_remain(self, html, index):
         selector_s = "tbody > tr:eq(%d) > td:gt(0)" % index
@@ -77,6 +118,9 @@ class ToyokoInn(object):
         return self.data
 
     def room(self, date=None, member=False):
+        return self._room(date, member)
+
+    def _room(self, date=None, member=False):
         s = requests.session()
 
         baseurl = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html'
@@ -168,7 +212,7 @@ if __name__ == '__main__':
         True
     ]
 
-    hotel = ToyokoInn(u"大阪JR野田駅前")
+    hotel = ToyokoInn(u"札幌すすきの交差点")
 
     date = {'year': int(year), 'month': int(month), 'day': int(day)}
     rooms = hotel.room(date=date, member=member)
