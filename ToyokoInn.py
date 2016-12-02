@@ -151,7 +151,7 @@ class ToyokoInn(object):
             'chcknYearAndMnth': '%d%02d' % (date['year'], date['month']),
             'chcknDayOfMnth': '%02d' % (date['day']),
             'prfctr': self.state,
-            'htlName': quote(self.name.encode("UTF-8")),
+            'htlName': quote(self.name),
             'id': self.dataid,
         })
         url = baseurl + '?' + \
