@@ -141,77 +141,43 @@ class ToyokoInn(object):
         return self._room(date, member)
 
     def _room(self, date=None, member=False):
+        # Start a session
         s = requests.session()
 
+        # Prepare request: GET
         baseurl = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html'
-        param = {
-            'tlDtl': 'true',
-            'cntry': 'JPN',
+        self.config['param'].update({
             'chcknYearAndMnth': '%d%02d' % (date['year'], date['month']),
             'chcknDayOfMnth': '%02d' % (date['day']),
-            # 宿泊数
-            'ldgngNum': '1',
-            # 部屋数
-            'roomNum': '1',
-            'roomClssId': '',
-            'fvrtName': '',
             'prfctr': self.state,
             'htlName': quote(self.name.encode("UTF-8")),
-            'language': 'ja',
-            'dispFull': 'on',
-            # １部屋ご利用人数
-            'ldgngPpl': '2',
             'id': self.dataid,
-            'ref': 'info',
-        }
-        url = baseurl + '?' + '&'.join([k + '=' + v for k, v in param.items()])
+        })
+        url = baseurl + '?' + \
+              '&'.join([k + '=' + v for k, v in self.config['param'].items()])
 
-        headers = {
-            'User-Agent': ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) ' +
-                           'AppleWebKit/537.36 (KHTML, like Gecko) ' +
-                           'Chrome/51.0.2704.103 Safari/537.36'),
-            'Accept': ('text/html,application/xhtml+xml,application/xml;' +
-                       'q=0.9,image/webp,*/*;q=0.8'),
-            'Accept-Encoding': 'gzip, deflate, sdch, br',
-            'Accept-Language': 'zh-TW,zh;q=0.8,en-US;q=0.6,en;q=0.4,ja;q=0.2',
-        }
-
-        # session GET
-        r = s.get(url, headers=headers)
+        # Session GET
+        r = s.get(url, headers=self.config['headers'])
 
         _s = "table.BlockSearch1 > tbody > div > tr > th > .BlockSearch2 a"
         clndr = PyQuery(r.text).find(_s).attr("onclick")[24:-2]
 
-        url = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html'
-        data = {
-            'rg.seasar.ymir.token': '89dbd02e37b4597e8862423dc09a4c0d',
-            'language': '',
-            'htlUid': '',
-            'srchRoomAllFlag': 'true',
-            'srchRoomBasicFlag': 'false',
-            'srchRoomPlanFlag': 'false',
-            'tabGrpCode': 'ALL',
-            'langFlag': 'ja',
-            'dsplLinkPnt': '',
-            'hospital': '',
-            'cntry': 'JPN',
+        # Prepare request: POST
+        baseurl = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html'
+        self.config['payload'].update({
             'prfctr': self.state,
-            'mncplty': '',
-            'clsstSttn': '',
             'htlName': self.name,
             'chcknYearAndMnth': '%d%02d' % (date['year'], date['month']),
             'chcknDayOfMnth': '%02d' % date['day'],
-            'ldgngNum': '1',
-            'ldgngPpl': '2',
-            'roomNum': '2',
-            'dispFull': 'on',
-        }
-
-        baseurl = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html'
+        })
         param = clndr
         url = baseurl + '?' + param
-        r = s.post(url, headers=headers, data=data)
 
+        # Session POST
+        r = s.post(url, headers=self.config['headers'],
+                   data=self.config['payload'])
+
+        # Extract data
         result = []
         data = self._extract(r.text.encode('utf-8'))
         key = '%s/%s' % (int(date['month']), int(date['day']))
@@ -220,6 +186,7 @@ class ToyokoInn(object):
             if remain == 0:
                 continue
             result.append('%s %s %s' % (room, price, remain))
+
         return result
 
 
