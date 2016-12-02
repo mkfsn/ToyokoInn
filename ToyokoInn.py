@@ -94,7 +94,8 @@ class ToyokoInn(object):
             item = PyQuery(td).find("table > tbody div tr:eq(1)")
 
             price = PyQuery(item).find("td > span").text()
-            price = int(sub(r'[^\d.]', '', price))
+            price = sub(r'[^\d.]', '', price)
+            price = int(price) if price != '' else 0
 
             remain = PyQuery(item).find("td + td + td").text()
             if remain == u'\u25ce':
