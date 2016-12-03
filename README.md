@@ -72,6 +72,8 @@ Choose:
 
 ## Query rooms by date
 
+> Default is current date
+
 ```python
 >>> rooms = hotel.rooms(year=2016, month=12, day=31)
 >>> for r in rooms:

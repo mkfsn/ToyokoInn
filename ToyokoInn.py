@@ -170,7 +170,10 @@ class Hotel(object):
             day = int(date['day'])
 
         else:
-            raise Exception("Please specify a day")
+            today = datetime.today()
+            year = today.year
+            month = today.month
+            day = today.day
 
         if people > 2 or people < 1:
             raise Exception("@people has to be either 1 or 2")
@@ -265,17 +268,17 @@ class ToyokoInn(object):
 
 
 if __name__ == '__main__':
-    next_month = datetime.today() + timedelta(days=30)
-    year, month, day, member = [
-        next_month.year,
-        next_month.month,
-        next_month.day,
-    ]
-
     hotel = ToyokoInn(u"札幌すすきの交差点")
+    rooms = hotel.rooms()
+    for r in rooms:
+        print r
 
-    date = {'year': int(year), 'month': int(month), 'day': int(day)}
-    rooms = hotel.rooms(date=date)
-
+    next_month = datetime.today() + timedelta(days=30)
+    date = {
+        'year': next_month.year,
+        'month': next_month.month,
+        'day': next_month.day
+    }
+    rooms = hotel.rooms(**date)
     for r in rooms:
         print r
