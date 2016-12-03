@@ -38,7 +38,7 @@ class Hotel(object):
         self.config = config
 
     def __repr__(self):
-        return '<Hotel: %s dataid=%r, state=%r, substateid=%r>' % (
+        return '<Hotel %s: dataid=%r, state=%r, substateid=%r>' % (
             self.name,
             self.dataid,
             self.state,
