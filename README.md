@@ -2,6 +2,8 @@
 
 Simple script to fetch reservable rooms.
 
+[東横INN公式ホームページ](https://www.toyoko-inn.com/)
+
 # Dependency
 
 * python-pip
@@ -11,7 +13,7 @@ Simple script to fetch reservable rooms.
 Install required packages.
 
 ```
-$ pip -r requirement.txt
+$ pip -r requirement.txt --user
 ```
 
 # How to use
