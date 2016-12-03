@@ -174,15 +174,16 @@ class ToyokoInn(object):
 
     @classmethod
     def __search_hotel_by_name(cls, name):
-        n = sum(1 for h in ToyokoInn.hotels if name in h.name)
+        candidates = [h for h in ToyokoInn.hotels if name in h.name]
 
         weighted_results = []
-        for hotel in ToyokoInn.hotels:
+        for hotel in candidates:
             ratio = difflib.SequenceMatcher(None, hotel.name, name).ratio()
-            weighted_results.append((hotel, ratio))
-        weighted_results = sorted(weighted_results, key=lambda x: x[1])
+            weighted_results.append({'hotel': hotel, 'ratio': ratio})
+        weighted_results = sorted(weighted_results, key=lambda x: x["ratio"])
 
-        data = weighted_results[::-1][:n]
+        data = weighted_results[::-1]
+        n = len(data)
 
         if n == 0:
             raise Exception("No candidate hotel is found")
@@ -190,12 +191,15 @@ class ToyokoInn(object):
         elif n != 1:
             print "Candidates are:"
             for i in data:
-                print "%f%%: %s, id = %s" % (i[1], i[0].name, i[0].dataid)
+                print "%f%%: %s, id = %s" % (i["ratio"],
+                                             i["hotel"].name,
+                                             i["hotel"].dataid)
             print
             print "Choose:"
-            print "%s, id = %s" % (data[0][0].name, data[0][0].dataid)
+            print "%s, id = %s" % (data[0]["hotel"].name,
+                                   data[0]["hotel"].dataid)
 
-        return data[0][0]
+        return data[0]["hotel"]
 
     @classmethod
     def __search_hotel_by_id(cls, id):
