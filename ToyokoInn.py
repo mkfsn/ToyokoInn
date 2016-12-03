@@ -82,9 +82,10 @@ class Hotel(object):
         for td in PyQuery(html).children(selector_s):
             item = PyQuery(td).find("table > tbody div tr:eq(1)")
 
-            price = PyQuery(item).find("td > span").text()
-            price = sub(r'[^\d.]', '', price)
-            price = int(price) if price != '' else 0
+            try:
+                price = int(PyQuery(item).find("td > span").text())
+            except:
+                price = 0
 
             remain = PyQuery(item).find("td + td + td").text()
             if remain == u'\u25ce':
