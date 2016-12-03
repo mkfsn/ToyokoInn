@@ -193,12 +193,9 @@ class ToyokoInn(object):
             output = sys.stderr.write 
             output("Candidates are:\n")
             for i in data:
-                output("%f%%: %s, id = %s\n" % (i["ratio"],
-                                                i["hotel"].name,
-                                                i["hotel"].dataid))
+                output("%f%%: %r\n" % (i["ratio"], i['hotel']))
             output("\nChoose:\n")
-            output("%s, id = %s\n" % (data[0]["hotel"].name,
-                                      data[0]["hotel"].dataid))
+            output("%r\n" % data[0]['hotel'])
             sys.stderr.flush()
 
         return data[0]["hotel"]
