@@ -125,6 +125,8 @@ class Hotel(object):
 
         # Session GET
         r = s.get(url, headers=self.config['headers'])
+        if u"入力されたチェックイン日、宿泊数では予約できません。" in r.text:
+            raise Exception("This date is currently not available")
 
         _s = "table.BlockSearch1 > tbody > div > tr > th > .BlockSearch2 a"
         clndr = PyQuery(r.text).find(_s).attr("onclick")[24:-2]
