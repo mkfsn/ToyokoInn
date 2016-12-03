@@ -104,18 +104,21 @@ class Hotel(object):
             data.append(r)
         return data
 
-    def __fetch_rawdata(self, year, month, day):
+    def __fetch_rawdata(self, **kwargs):
         # Start a session
         s = requests.session()
 
         # Prepare request: GET
         baseurl = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html'
         self.config['param'].update({
-            'chcknYearAndMnth': '%d%02d' % (year, month),
-            'chcknDayOfMnth': '%02d' % day,
             'prfctr': self.state,
             'htlName': quote(self.name),
+            'chcknYearAndMnth': '%d%02d' % (kwargs['year'], kwargs['month']),
+            'chcknDayOfMnth': '%02d' % kwargs['day'],
             'id': self.dataid,
+            'roomNum': str(kwargs['num']),
+            'ldgngPpl': str(kwargs['people']),
+            'ldgngNum': str(kwargs['stay']),
         })
         url = baseurl + '?' + \
             '&'.join([k + '=' + v for k, v in self.config['param'].items()])
@@ -131,8 +134,11 @@ class Hotel(object):
         self.config['payload'].update({
             'prfctr': self.state,
             'htlName': self.name,
-            'chcknYearAndMnth': '%d%02d' % (year, month),
-            'chcknDayOfMnth': '%02d' % day,
+            'chcknYearAndMnth': '%d%02d' % (kwargs['year'], kwargs['month']),
+            'chcknDayOfMnth': '%02d' % kwargs['day'],
+            'roomNum': str(kwargs['num']),
+            'ldgngPpl': str(kwargs['people']),
+            'ldgngNum': str(kwargs['stay']),
         })
         param = clndr
         url = baseurl + '?' + param
@@ -143,7 +149,12 @@ class Hotel(object):
 
         return r.text.encode('utf-8')
 
-    def rooms(self, **kwargs):
+    """
+    @num(int): Number of rooms, default is 1
+    @stay(int): Number of days, default is 1
+    @people(int): Number of people in one room, default is 1
+    """
+    def rooms(self, num=1, stay=1, people=2, **kwargs):
 
         if 'year' in kwargs and 'month' in kwargs and 'day' in kwargs:
             year = int(kwargs['year'])
@@ -159,7 +170,14 @@ class Hotel(object):
         else:
             raise Exception("Please specify a day")
 
-        text = self.__fetch_rawdata(year, month, day)
+        if people > 2 or people < 1:
+            raise Exception("@people has to be either 1 or 2")
+
+        if stay > 7:
+            raise Exception("@stay currently supported within 7 days")
+
+        text = self.__fetch_rawdata(year=year, month=month, day=day,
+                                    people=people, stay=stay, num=num)
 
         data = self.__extract(text)
         return self.__adjust(data['%s/%s' % (month, day)])
