@@ -28,101 +28,22 @@ class Room(object):
         return '<Room %s: %s, %s>' % (self.name, m, g)
 
 
-class ToyokoInn(object):
+class Hotel(object):
 
-    __info = None
-    __default = None
+    def __init__(self, info, config=None):
+        self.name = info['name']
+        self.dataid = info['dataid']
+        self.state = info['state']
+        self.substateid = info['substateid']
+        self.config = config
 
-    def __search_hotel_by_name(self, name):
-        n = sum(1 for h in ToyokoInn.__info if name in h['name'])
-
-        weighted_results = []
-        for hotel in ToyokoInn.__info:
-            ratio = difflib.SequenceMatcher(None, hotel['name'], name).ratio()
-            weighted_results.append((hotel, ratio))
-        weighted_results = sorted(weighted_results, key=lambda x: x[1])
-
-        data = weighted_results[::-1][:n]
-
-        if n == 0:
-            raise Exception("No candidate hotel is found")
-
-        elif n != 1:
-            print "Candidates are:"
-            for i in data:
-                print "%f%%: %s, id = %s" %(i[1], i[0]['name'], i[0]['dataid'])
-            print
-            print "Choose:"
-            print "%s, id = %s" %(data[0][0]['name'], data[0][0]['dataid'])
-
-        return data[0][0]
-
-    def __search_hotel_by_id(self, id):
-        for hotel in ToyokoInn.__info:
-            if id == hotel['dataid']:
-                return hotel
-        raise Exception("Hotel not found")
-
-    def __load_config(self, fname):
-        from ConfigParser import RawConfigParser
-        config = RawConfigParser()
-        config.optionxform = str
-
-        with open(fname, 'rb') as fp:
-            config.readfp(fp, fname)
-
-        data = {}
-        for s in config.sections():
-            data[s] = dict(config.items(s))
-
-        return data
-
-    def __init__(self, name=None, id=None):
-
-        if not ToyokoInn.__info:
-            from script.fetch_hotel_info import fetch
-            ToyokoInn.__info = fetch()
-
-        if not ToyokoInn.__default:
-            ToyokoInn.__default = self.__load_config("settings.ini")
-
-        self.config = ToyokoInn.__default
-
-        if isinstance(name, unicode):
-            name = name.encode('utf-8')
-
-        if id is not None:
-            data = self.__search_hotel_by_id(str(id))
-
-        elif name is not None:
-            data = self.__search_hotel_by_name(name)
-
-        self.name = data['name']
-        self.dataid = data['dataid']
-        self.state = data['state']
-        self.substateid = data['substateid']
-
-    def __extract_price_remain(self, html, index):
-        selector_s = "tbody > tr:eq(%d) > td:gt(0)" % index
-
-        result = []
-        for td in PyQuery(html).children(selector_s):
-            item = PyQuery(td).find("table > tbody div tr:eq(1)")
-
-            price = PyQuery(item).find("td > span").text()
-            price = sub(r'[^\d.]', '', price)
-            price = int(price) if price != '' else 0
-
-            remain = PyQuery(item).find("td + td + td").text()
-            if remain == u'\u25ce':
-                remain = 10
-            elif remain == u'\xd7' or remain == '':
-                remain = 0
-            else:
-                remain = int(remain)
-
-            result.append([price, remain])
-        return result
+    def __repr__(self):
+        return '<Hotel: %s dataid=%r, state=%r, substateid=%r>' % (
+            self.name,
+            self.dataid,
+            self.state,
+            self.substateid
+        )
 
     def __extract(self, html):
         pq = PyQuery(html).find(
@@ -154,6 +75,36 @@ class ToyokoInn(object):
 
         return self.data
 
+    def __extract_price_remain(self, html, index):
+        selector_s = "tbody > tr:eq(%d) > td:gt(0)" % index
+
+        result = []
+        for td in PyQuery(html).children(selector_s):
+            item = PyQuery(td).find("table > tbody div tr:eq(1)")
+
+            price = PyQuery(item).find("td > span").text()
+            price = sub(r'[^\d.]', '', price)
+            price = int(price) if price != '' else 0
+
+            remain = PyQuery(item).find("td + td + td").text()
+            if remain == u'\u25ce':
+                remain = 10
+            elif remain == u'\xd7' or remain == '':
+                remain = 0
+            else:
+                remain = int(remain)
+
+            result.append([price, remain])
+        return result
+
+    def __adjust(self, rooms):
+        data = []
+        for name, room in rooms.items():
+            r = Room(name, room['member'][0], room['member'][1],
+                     room['guest'][0], room['guest'][1])
+            data.append(r)
+        return data
+
     def __fetch_rawdata(self, year, month, day):
         # Start a session
         s = requests.session()
@@ -168,7 +119,7 @@ class ToyokoInn(object):
             'id': self.dataid,
         })
         url = baseurl + '?' + \
-              '&'.join([k + '=' + v for k, v in self.config['param'].items()])
+            '&'.join([k + '=' + v for k, v in self.config['param'].items()])
 
         # Session GET
         r = s.get(url, headers=self.config['headers'])
@@ -193,17 +144,7 @@ class ToyokoInn(object):
 
         return r.text.encode('utf-8')
 
-    def __adjust(self, rooms):
-        data = []
-        for name, room in rooms.items():
-            r = Room(name, room['member'][0], room['member'][1],
-                     room['guest'][0], room['guest'][1])
-            data.append(r)
-        return data
-
     def rooms(self, **kwargs):
-
-        member = kwargs.get('member', False)
 
         if 'year' in kwargs and 'month' in kwargs and 'day' in kwargs:
             year = int(kwargs['year'])
@@ -225,19 +166,95 @@ class ToyokoInn(object):
         return self.__adjust(data['%s/%s' % (month, day)])
 
 
+class ToyokoInn(object):
+
+    hotels = None
+    config = None
+
+    @classmethod
+    def __search_hotel_by_name(cls, name):
+        n = sum(1 for h in ToyokoInn.hotels if name in h.name)
+
+        weighted_results = []
+        for hotel in ToyokoInn.hotels:
+            ratio = difflib.SequenceMatcher(None, hotel.name, name).ratio()
+            weighted_results.append((hotel, ratio))
+        weighted_results = sorted(weighted_results, key=lambda x: x[1])
+
+        data = weighted_results[::-1][:n]
+
+        if n == 0:
+            raise Exception("No candidate hotel is found")
+
+        elif n != 1:
+            print "Candidates are:"
+            for i in data:
+                print "%f%%: %s, id = %s" % (i[1], i[0].name, i[0].dataid)
+            print
+            print "Choose:"
+            print "%s, id = %s" % (data[0][0].name, data[0][0].dataid)
+
+        return data[0][0]
+
+    @classmethod
+    def __search_hotel_by_id(cls, id):
+        for hotel in ToyokoInn.hotels:
+            if id == hotel.dataid:
+                return hotel
+        raise Exception("Hotel not found")
+
+    @classmethod
+    def __load_config(cls, fname):
+        from ConfigParser import RawConfigParser
+        config = RawConfigParser()
+        config.optionxform = str
+
+        with open(fname, 'rb') as fp:
+            config.readfp(fp, fname)
+
+        data = {}
+        for s in config.sections():
+            data[s] = dict(config.items(s))
+
+        return data
+
+    def __new__(cls, name=None, id=None):
+
+        if not ToyokoInn.config:
+            ToyokoInn.config = cls.__load_config("settings.ini")
+
+        if not ToyokoInn.hotels:
+            from utils import hotel_info
+            ToyokoInn.hotels = list()
+            for info in hotel_info.fetch():
+                hotel = Hotel(info, config=ToyokoInn.config)
+                ToyokoInn.hotels.append(hotel)
+                print hotel
+
+        if isinstance(name, unicode):
+            name = name.encode('utf-8')
+
+        if id is not None:
+            hotel = ToyokoInn.__search_hotel_by_id(str(id))
+
+        elif name is not None:
+            hotel = ToyokoInn.__search_hotel_by_name(name)
+
+        return hotel
+
+
 if __name__ == '__main__':
     next_month = datetime.today() + timedelta(days=30)
     year, month, day, member = [
         next_month.year,
         next_month.month,
         next_month.day,
-        True
     ]
 
     hotel = ToyokoInn(u"札幌すすきの交差点")
 
     date = {'year': int(year), 'month': int(month), 'day': int(day)}
-    rooms = hotel.rooms(date=date, member=member)
+    rooms = hotel.rooms(date=date)
 
     for r in rooms:
         print r
