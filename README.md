@@ -71,7 +71,7 @@ Choose:
 ## Query rooms by date
 
 ```python
->>> rooms = hotel.rooms(year=2016, month=12, day=31, member=False)
+>>> rooms = hotel.rooms(year=2016, month=12, day=31)
 >>> for r in rooms:
 ...     print r
 
