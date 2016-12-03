@@ -234,7 +234,6 @@ class ToyokoInn(object):
             for info in hotel_info.fetch():
                 hotel = Hotel(info, config=ToyokoInn.config)
                 ToyokoInn.hotels.append(hotel)
-                print hotel
 
         if isinstance(name, unicode):
             name = name.encode('utf-8')
