@@ -189,15 +189,17 @@ class ToyokoInn(object):
             raise Exception("No candidate hotel is found")
 
         elif n != 1:
-            print "Candidates are:"
+            import sys
+            output = sys.stderr.write 
+            output("Candidates are:\n")
             for i in data:
-                print "%f%%: %s, id = %s" % (i["ratio"],
-                                             i["hotel"].name,
-                                             i["hotel"].dataid)
-            print
-            print "Choose:"
-            print "%s, id = %s" % (data[0]["hotel"].name,
-                                   data[0]["hotel"].dataid)
+                output("%f%%: %s, id = %s\n" % (i["ratio"],
+                                                i["hotel"].name,
+                                                i["hotel"].dataid))
+            output("\nChoose:\n")
+            output("%s, id = %s\n" % (data[0]["hotel"].name,
+                                      data[0]["hotel"].dataid))
+            sys.stderr.flush()
 
         return data[0]["hotel"]
 
