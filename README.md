@@ -89,3 +89,9 @@ Choose:
 <Room 禁煙ダブル: <Member: price=8835, remain=0>, <Guest: price=9300, remain=0>>
 <Room 喫煙エコノミーダブル: <Member: price=7885, remain=4>, <Guest: price=8300, remain=4>>
 ```
+
+### Options
+
++ @people: Number of people in one room, default is 2
++ @num: Number of rooms, default is 1
++ @stay: Number of days, default is 1
