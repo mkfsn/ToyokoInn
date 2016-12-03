@@ -188,7 +188,7 @@ class ToyokoInn(object):
 
         elif n != 1:
             import sys
-            output = sys.stderr.write 
+            output = sys.stderr.write
             output("Candidates are:\n")
             for i in data:
                 output("%f%%: %r\n" % (i["ratio"], i['hotel']))
