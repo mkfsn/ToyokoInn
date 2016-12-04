@@ -133,3 +133,20 @@ Choose:
 <Room 喫煙ツイン: <Member: price=7885, remain=0>, <Guest: price=8300, remain=0>>
 <Room 【VISA1000+VOD】出張パック100★禁煙シングル: <Member: price=8498, remain=2>, <Guest: price=8863, remain=2>>
 ```
+
+### Filters
+
+* available: bool
+* smoking: bool
+
+```python
+>>> rooms = hotel.rooms(year=2017, month=6, day=4, people=2, filter={'smoking': False, 'available': True})
+>>> for r in rooms:
+...     print r
+
+<Room 禁煙エコノミーダブル: <Member: price=5600, remain=8>>
+<Room vod★カップルプラン♪お得にビデオ見放題！ 禁煙ダブル: <Member: price=6863, remain=8>>
+<Room vod★カップルプラン♪お得にビデオ見放題！ 禁煙エコノミーダブル: <Member: price=6063, remain=8>>
+<Room 禁煙ダブル: <Member: price=6400, remain=8>>
+<Room 禁煙ビジネスツイン: <Member: price=6400, remain=4>>
+```
