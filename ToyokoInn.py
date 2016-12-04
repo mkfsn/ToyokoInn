@@ -52,13 +52,14 @@ class Room(object):
                                                   self.guest['remain'])
 
         if self.member is not None and self.guest is not None:
-            return '<Room %s: %s, %s>' % (self.name, m, g)
+            return '<%s %s: %s, %s>' % (self.__class__.__name__,
+                                        self.name, m, g)
         elif self.member is not None:
-            return '<Room %s: %s>' % (self.name, m)
+            return '<%s %s: %s>' % (self.__class__.__name__, self.name, m)
         elif self.guest is not None:
-            return '<Room %s: %s>' % (self.name, g)
+            return '<%s %s: %s>' % (self.__class__.__name__, self.name, g)
         else:
-            return '<Room %s>' % self.name
+            return '<%s %s>' % (self.__class__.__name__, self.name)
 
     @property
     def member_price(self):
@@ -91,7 +92,8 @@ class Hotel(object):
         self.config = config
 
     def __repr__(self):
-        return '<Hotel %s: dataid=%r, state=%r, substateid=%r>' % (
+        return '<%s %s: dataid=%r, state=%r, substateid=%r>' % (
+            self.__class__.__name__,
             self.name,
             self.dataid,
             self.state,
