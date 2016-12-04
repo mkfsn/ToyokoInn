@@ -14,6 +14,8 @@ import difflib
 
 class Room(object):
 
+    __options = {'smoking': bool, 'available': bool}
+
     def __init__(self, name, member_price, member_remain,
                  guest_price, guest_remain):
         self.name = name.encode('utf-8')
@@ -66,6 +68,10 @@ class Room(object):
     @property
     def guest_remain(self):
         return self.guest['remain'] if self.guest else None
+
+    @classmethod
+    def options(cls):
+        return cls.__options
 
 
 class Hotel(object):
@@ -206,7 +212,7 @@ class Hotel(object):
 
     def __set_filter(self, filter):
         if filter is not None:
-            options = {'smoking': bool, 'available': bool}
+            options = Room.options()
             for key, value in filter.items():
                 if key not in options.keys():
                     raise Exception("filter `%s' not supported" % key)
