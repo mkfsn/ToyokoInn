@@ -17,7 +17,7 @@ class Room(object):
     __options = {'smoking': bool, 'available': bool}
 
     def __init__(self, name, member_price, member_remain,
-                 guest_price, guest_remain):
+                 guest_price, guest_remain, ismember=True):
         self.name = name.encode('utf-8')
         self.smoking = u'喫煙' in name
 
@@ -35,6 +35,13 @@ class Room(object):
             (self.member is not None and self.member['remain'] > 0) or
             (self.guest is not None and self.guest['remain'] > 0)
         )
+
+        if ismember:
+            self.price = member_price
+            self.remain = member_remain
+        else:
+            self.price = guest_price
+            self.remain = guest_remain
 
     def __repr__(self):
         if self.member is not None:
