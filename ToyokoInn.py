@@ -17,22 +17,30 @@ class Room(object):
     def __init__(self, name, member_price, member_remain,
                  guest_price, guest_remain):
         self.name = name.encode('utf-8')
-        self.guest = {'remain': guest_remain, 'price': guest_price}
-        self.member = {'remain': member_remain, 'price': member_price}
+
+        if guest_price is not None and guest_remain is not None:
+            self.guest = {'remain': guest_remain, 'price': guest_price}
+        else:
+            self.guest = None
+
+        if member_remain is not None and member_remain is not None:
+            self.member = {'remain': member_remain, 'price': member_price}
+        else:
+            self.member = None
 
     def __repr__(self):
-        if member:
+        if self.member is not None:
             m = '<Member: price=%d, remain=%d>' % (self.member['price'],
                                                    self.member['remain'])
-        if guest:
+        if self.guest is not None:
             g = '<Guest: price=%d, remain=%d>' % (self.guest['price'],
                                                   self.guest['remain'])
 
-        if member and guest:
+        if self.member is not None and self.guest is not None:
             return '<Room %s: %s, %s>' % (self.name, m, g)
-        elif member:
+        elif self.member is not None:
             return '<Room %s: %s>' % (self.name, m)
-        elif guest:
+        elif self.guest is not None:
             return '<Room %s: %s>' % (self.name, g)
         else:
             return '<Room %s>' % self.name
@@ -46,20 +54,12 @@ class Room(object):
         return self.member['remain'] if self.member else None
 
     @property
-    def member(self):
-        return self.member
-
-    @property
     def guest_price(self):
         return self.guest['price'] if self.guest else None
 
     @property
     def guest_remain(self):
         return self.guest['remain'] if self.guest else None
-
-    @property
-    def guest(self):
-        return self.guest
 
 
 class Hotel(object):
@@ -116,16 +116,24 @@ class Hotel(object):
         for td in PyQuery(html).children(selector_s):
             item = PyQuery(td).find("table > tbody div tr:eq(1)")
 
-            price = sub(r'[^\d]', '', PyQuery(item).find("td > span").text())
-            price = int(price) if price != '' else 0
+            raw_price = PyQuery(item).find("td > span").text()
+            raw_remain = PyQuery(item).find("td + td + td").text()
 
-            remain = PyQuery(item).find("td + td + td").text()
-            if remain == u'\u25ce':
+            if raw_price == '' and raw_remain == '':
+                result.append([None, None])
+                continue
+
+            try:
+                price = int(sub(r'[^\d]', '', raw_price))
+            except:
+                price = 0
+
+            if raw_remain == u'\u25ce':
                 remain = 10
-            elif remain == u'\xd7' or remain == '':
+            elif raw_remain == u'\xd7' or raw_remain == '':
                 remain = 0
             else:
-                remain = int(remain)
+                remain = int(raw_remain)
 
             result.append([price, remain])
         return result
