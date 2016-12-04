@@ -13,7 +13,7 @@ Simple script to fetch reservable rooms.
 Install required packages.
 
 ```
-$ pip -r requirement.txt --user
+$ pip install -r requirement.txt --user
 ```
 
 # How to use
