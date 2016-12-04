@@ -21,11 +21,45 @@ class Room(object):
         self.member = {'remain': member_remain, 'price': member_price}
 
     def __repr__(self):
-        m = '<Member: price=%d, remain=%d>' % (self.member['price'],
-                                               self.member['remain'])
-        g = '<Guest: price=%d, remain=%d>' % (self.guest['price'],
-                                              self.guest['remain'])
-        return '<Room %s: %s, %s>' % (self.name, m, g)
+        if member:
+            m = '<Member: price=%d, remain=%d>' % (self.member['price'],
+                                                   self.member['remain'])
+        if guest:
+            g = '<Guest: price=%d, remain=%d>' % (self.guest['price'],
+                                                  self.guest['remain'])
+
+        if member and guest:
+            return '<Room %s: %s, %s>' % (self.name, m, g)
+        elif member:
+            return '<Room %s: %s>' % (self.name, m)
+        elif guest:
+            return '<Room %s: %s>' % (self.name, g)
+        else:
+            return '<Room %s>' % self.name
+
+    @property
+    def member_price(self):
+        return self.member['price'] if self.member else None
+
+    @property
+    def member_remain(self):
+        return self.member['remain'] if self.member else None
+
+    @property
+    def member(self):
+        return self.member
+
+    @property
+    def guest_price(self):
+        return self.guest['price'] if self.guest else None
+
+    @property
+    def guest_remain(self):
+        return self.guest['remain'] if self.guest else None
+
+    @property
+    def guest(self):
+        return self.guest
 
 
 class Hotel(object):
