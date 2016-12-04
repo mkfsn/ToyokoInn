@@ -17,6 +17,7 @@ class Room(object):
     def __init__(self, name, member_price, member_remain,
                  guest_price, guest_remain):
         self.name = name.encode('utf-8')
+        self.smoking = u'喫煙' in name
 
         if guest_price is not None and guest_remain is not None:
             self.guest = {'remain': guest_remain, 'price': guest_price}
@@ -27,6 +28,11 @@ class Room(object):
             self.member = {'remain': member_remain, 'price': member_price}
         else:
             self.member = None
+
+        self.available = (
+            (self.member is not None and self.member['remain'] > 0) or
+            (self.guest is not None and self.guest['remain'] > 0)
+        )
 
     def __repr__(self):
         if self.member is not None:
@@ -141,9 +147,14 @@ class Hotel(object):
     def __adjust(self, rooms):
         data = []
         for name, room in rooms.items():
+            matched = True
             r = Room(name, room['member'][0], room['member'][1],
                      room['guest'][0], room['guest'][1])
-            data.append(r)
+            if self.filter is not None:
+                for key, value in self.filter.items():
+                    matched = matched and (r.__getattribute__(key) == value)
+            if matched:
+                data.append(r)
         return data
 
     def __fetch_rawdata(self, **kwargs):
@@ -193,6 +204,17 @@ class Hotel(object):
 
         return r.text.encode('utf-8')
 
+    def __set_filter(self, filter):
+        if filter is not None:
+            options = {'smoking': bool, 'available': bool}
+            for key, value in filter.items():
+                if key not in options.keys():
+                    raise Exception("filter `%s' not supported" % key)
+                if not isinstance(value, options[key]):
+                    err = "filter `%s' is expecting %r" % (key, options[key])
+                    raise Exception(err)
+        self.filter = filter
+
     """
     @num(int): Number of rooms, default is 1
     @stay(int): Number of days, default is 1
@@ -216,6 +238,8 @@ class Hotel(object):
             year = today.year
             month = today.month
             day = today.day
+
+        self.__set_filter(kwargs.get('filter', None))
 
         if people > 2 or people < 1:
             raise Exception("@people has to be either 1 or 2")
