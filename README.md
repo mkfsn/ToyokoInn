@@ -1,3 +1,5 @@
+## Warning: This repo is temporary not maintained and outdated
+
 # Toyoko Inn
 
 Simple script to fetch reservable rooms.
