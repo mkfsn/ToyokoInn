@@ -26,7 +26,7 @@ def fetch():
     r = requests.get(url)
 
     try:
-        var = re.search('hotelInfo    = (.*);', r.text).groups()[0]
+        var = re.search('var hotelInfo = (.*)\r', r.text).groups()[0]
     except:
         import sys
         sys.stderr.write("Fail to extract `hotelInfo' in webpage : %s\n" % url)
