@@ -45,10 +45,10 @@ class Room(object):
 
     def __repr__(self):
         if self.member is not None:
-            m = '<Member: price=%d, remain=%d>' % (self.member['price'],
+            m = '<Member: price=%r, remain=%r>' % (self.member['price'],
                                                    self.member['remain'])
         if self.guest is not None:
-            g = '<Guest: price=%d, remain=%d>' % (self.guest['price'],
+            g = '<Guest: price=%r, remain=%r>' % (self.guest['price'],
                                                   self.guest['remain'])
 
         if self.member is not None and self.guest is not None:
@@ -87,74 +87,96 @@ class Hotel(object):
     def __init__(self, info, config=None):
         self.name = info['name']
         self.dataid = info['dataid']
-        self.state = info['state']
-        self.substateid = info['substateid']
+        self.rgn1 = info['rgn1']
+        self.rgn2 = info['rgn2']
+        self.rgn3 = info['rgn3']
+        self.rgn4 = info['rgn4']
+        # self.state = info['state']
+        # self.substateid = info['substateid']
         self.config = config
 
+    @property
+    def state(self):
+        if self.rgn1 in ["1", "123", "134"]:
+            return self.rgn2
+        if self.rgn1 in ["2", "3", "4", "5", "6", "7"]:
+            return self.rgn3
+        return self.rgn4
+
     def __repr__(self):
-        return '<%s %s: dataid=%r, state=%r, substateid=%r>' % (
+        return '<%s %s: dataid=%r>' % (
             self.__class__.__name__,
             self.name,
             self.dataid,
-            self.state,
-            self.substateid
+            # self.state,
+            # self.substateid
         )
 
     def __extract(self, html):
-        pq = PyQuery(html).find(
-            "form div.BlockFormClndr table.BlockSrchClndr3"
-        )
+        pq = PyQuery(html).find("main#main #mainArea table")
 
-        selector_ = "tr:eq(11) th"
-        date_order = [PyQuery(v).text() for v in PyQuery(pq).find(selector_)]
-        self.data = {d: {} for d in date_order}
+        selector_ = "thead tr:eq(0) th"
+        date_order = [PyQuery(v).text().split('\n')[0] for v in PyQuery(pq).find(selector_)][3:]
+        result = {d: {} for d in date_order}
 
-        index = 9
-        while index < 1000:
-            # Get type of room
-            selector_ = "tbody > tr:eq(%d) th:eq(0)" % index
-            room = PyQuery(pq).children(selector_).text()
-            if room == '':
-                break
+        index = 0
+        total = len(PyQuery(pq).find("tbody tr"))
+        while index < total:
+            td = PyQuery(pq).find("tbody tr:eq(%d) td:eq(0)" % index)
 
-            for date, v in self.data.items():
-                self.data[date][room] = {'member': [], 'guest': []}
+            room_type = td.text().split()[0]
+            rowspan = int(td.attr('rowspan'))
 
-            for i, v in enumerate(self.__extract_price_remain(pq, index)):
-                self.data[date_order[i]][room]['member'] = v
+            for i in xrange(index, index + rowspan):
+                row = PyQuery(pq).find("tbody tr:eq(%d)" % i)
 
-            for i, v in enumerate(self.__extract_price_remain(pq, index + 2)):
-                self.data[date_order[i]][room]['guest'] = v
+                # smoking or not
+                smoking = PyQuery(row).find("td.alC.alM > img").attr("alt")
 
-            index += 3
+                room = "%s (%s)" % (room_type, smoking)
 
-        return self.data
+                if row.hasClass('clubCardCell'):
+                    member_type = 'member'
+                else:
+                    member_type = 'guest'
 
-    def __extract_price_remain(self, html, index):
-        selector_s = "tbody > tr:eq(%d) > td:gt(0)" % index
+                for i, v in enumerate(self.__extract_price_remain(row)):
+                    if room not in result[date_order[i]]:
+                        result[date_order[i]][room] = {}
+                    result[date_order[i]][room][member_type] = v
 
+            index += rowspan
+        return result
+
+    def __extract_price_remain(self, row):
         result = []
-        for td in PyQuery(html).children(selector_s):
-            item = PyQuery(td).find("table > tbody div tr:eq(1)")
-
-            raw_price = PyQuery(item).find("td > span").text()
-            raw_remain = PyQuery(item).find("td + td + td").text()
-
-            if raw_price == '' and raw_remain == '':
+        for td in PyQuery(row).children(".calenderCell"):
+            if PyQuery(td).hasClass('noneCell'):
+                result.append(['Unknown', 0])
+                continue
+            elif PyQuery(td).hasClass('emptyCell'):
                 result.append([None, None])
                 continue
+
+            items =  PyQuery(td).find("a").html().replace("<br/>", "\r").split('\r')
+
+            raw_price = PyQuery(items[1]).text()
+            raw_remain = items[0]
 
             try:
                 price = int(sub(r'[^\d]', '', raw_price))
             except:
-                price = 0
+                price = None
 
-            if raw_remain == u'\u25ce':
+            if raw_remain == u'\u25cb':
                 remain = 10
+            elif raw_remain == u'\u25b3':
+                remain = 5
             elif raw_remain == u'\xd7' or raw_remain == '':
                 remain = 0
             else:
-                remain = int(raw_remain)
+                print remain
+                remain = None
 
             result.append([price, remain])
         return result
@@ -175,47 +197,30 @@ class Hotel(object):
     def __fetch_rawdata(self, **kwargs):
         # Start a session
         s = requests.session()
+        url = "https://www.toyoko-inn.com/index?lcl_id=ja"
+        # For getting necessary cookies
+        r = s.get(url)
 
-        # Prepare request: GET
-        baseurl = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html'
-        self.config['param'].update({
-            'prfctr': self.state,
-            'htlName': quote(self.name),
-            'chcknYearAndMnth': '%d%02d' % (kwargs['year'], kwargs['month']),
-            'chcknDayOfMnth': '%02d' % kwargs['day'],
-            'id': self.dataid,
-            'roomNum': str(kwargs['num']),
-            'ldgngPpl': str(kwargs['people']),
-            'ldgngNum': str(kwargs['stay']),
-        })
-        url = baseurl + '?' + \
-            '&'.join([k + '=' + v for k, v in self.config['param'].items()])
+        url = 'https://www.toyoko-inn.com/index/condition_search'
+        data = {
+            'lcl_id': 'ja',
+            'prcssng_dvsn': 'dtl',
+            'sel_htl_txt': quote(self.name),
+            'chck_in': '%d/%02d/%02d' % (kwargs['year'], kwargs['month'], kwargs['day']),
+            'inn_date': str(kwargs['stay']),
+            'rsrv_num': str(kwargs['num']),
+            'sel_ldgngPpl': str(kwargs['people']),
+            'sel_area': self.state,
+            'sel_htl': self.dataid,
+        }
 
-        # Session GET
-        r = s.get(url, headers=self.config['headers'])
-        if u"入力されたチェックイン日、宿泊数では予約できません。" in r.text:
-            raise Exception("This date is currently not available")
+        # Search available rooms
+        r = s.post(url, data=data)
+        # if u"入力されたチェックイン日、宿泊数では予約できません。" in r.text:
+        #     raise Exception("This date is currently not available")
 
-        _s = "table.BlockSearch1 > tbody > div > tr > th > .BlockSearch2 a"
-        clndr = PyQuery(r.text).find(_s).attr("onclick")[24:-2]
-
-        # Prepare request: POST
-        baseurl = 'https://yoyaku.4and5.com/reserve/html/rvpc_srchHtl.html'
-        self.config['payload'].update({
-            'prfctr': self.state,
-            'htlName': self.name,
-            'chcknYearAndMnth': '%d%02d' % (kwargs['year'], kwargs['month']),
-            'chcknDayOfMnth': '%02d' % kwargs['day'],
-            'roomNum': str(kwargs['num']),
-            'ldgngPpl': str(kwargs['people']),
-            'ldgngNum': str(kwargs['stay']),
-        })
-        param = clndr
-        url = baseurl + '?' + param
-
-        # Session POST
-        r = s.post(url, headers=self.config['headers'],
-                   data=self.config['payload'])
+        url = "https://www.toyoko-inn.com/search/reserve/date"
+        r = s.get(url)
 
         return r.text.encode('utf-8')
 
