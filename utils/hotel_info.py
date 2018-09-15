@@ -22,11 +22,11 @@ def byteify(input):
 
 
 def fetch():
-    url = "http://www.toyoko-inn.com/"
+    url = "https://www.toyoko-inn.com/index.html?lcl_id=ja"
     r = requests.get(url)
 
     try:
-        var = re.search('var hotelInfo = (.*)\r', r.text).groups()[0]
+        var = re.search('var hotelInfo = (.*)', r.text).groups()[0]
     except:
         import sys
         sys.stderr.write("Fail to extract `hotelInfo' in webpage : %s\n" % url)
